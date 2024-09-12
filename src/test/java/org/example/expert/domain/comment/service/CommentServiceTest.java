@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
@@ -32,6 +33,7 @@ class CommentServiceTest {
     @Mock
     private TodoRepository todoRepository;
     @InjectMocks
+    @Spy
     private CommentService commentService;
 
     @Test
@@ -79,6 +81,7 @@ class CommentServiceTest {
 
         given(todoRepository.findById(anyLong())).willReturn(Optional.of(new Todo()));
         doNothing().when(commentRepository).deleteAll(anyList());
+        doNothing().when(commentService).showThrow();
         // when
         commentService.deleteComments(todoId);
 

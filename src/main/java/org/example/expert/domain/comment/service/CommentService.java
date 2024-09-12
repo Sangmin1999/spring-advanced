@@ -68,7 +68,12 @@ public class CommentService {
         Todo todo = todoRepository.findById(todoId).orElseThrow(() ->
                 new InvalidRequestException("Todo not found"));
 
+        showThrow();
+
         commentRepository.deleteAll(todo.getComments());
     }
 
+    public void showThrow() {
+        throw new RuntimeException("강제 오류 발생");
+    }
 }
