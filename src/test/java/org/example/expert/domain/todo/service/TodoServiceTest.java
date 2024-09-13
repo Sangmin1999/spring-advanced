@@ -1,8 +1,11 @@
 package org.example.expert.domain.todo.service;
 
 import org.example.expert.client.WeatherClient;
+import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
+import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
+import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
@@ -18,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 
@@ -72,4 +76,32 @@ public class TodoServiceTest {
         }
     }
 
+    @Test
+    void 일정을_정상적으로_등록한다() {
+        // given
+
+        String weather = "Sunny";
+        given(weatherClient.getTodayWeather()).willReturn(weather);
+
+        AuthUser authUser = new AuthUser(1L, "email", UserRole.USER);
+        User user = User.fromAuthUser(authUser);
+        TodoSaveRequest todoSaveRequest = new TodoSaveRequest("title", "Contents");
+        Todo savedTodo = new Todo(
+                todoSaveRequest.getTitle(),
+                todoSaveRequest.getContents(),
+                weather,
+                user
+        );
+        long savedTodoId = 1L;
+        ReflectionTestUtils.setField(savedTodo,"id", savedTodoId);
+        given(todoRepository.save(any())).willReturn(savedTodo);
+        // when
+
+        TodoSaveResponse response = todoService.saveTodo(authUser, todoSaveRequest);
+
+        //then
+
+        assertNotNull(response);
+        assertEquals(savedTodo.getId(), response.getId());
+    }
 }
