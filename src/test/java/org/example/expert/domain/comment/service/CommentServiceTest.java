@@ -126,5 +126,6 @@ class CommentServiceTest {
         assertEquals(2, result.size());
 
         assertEquals("content1", result.get(0).getContents());
+        assertEquals("test@example.com", result.get(1).getUser().getEmail());
     }
 }
