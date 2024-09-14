@@ -89,4 +89,24 @@ public class ManagerServiceDeleteTest {
         // then
         assertEquals("해당 일정을 만든 유저가 유효하지 않습니다.", exception.getMessage());
     }
+
+    @Test
+    void 매니저_삭제_중_매니저를_찾지_못해_에러_발생() {
+        // given
+        AuthUser authUser = new AuthUser(1L, "test@example.com", UserRole.USER);
+        User user = User.fromAuthUser(authUser);
+        Todo todo = new Todo("Title", "Contents", "Sunny", user);
+
+        given(userRepository.findById(anyLong())).willReturn(Optional.of(user));
+        given(todoRepository.findById(anyLong())).willReturn(Optional.of(todo));
+        given(managerRepository.findById(anyLong())).willReturn(Optional.empty());
+
+        // when
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () ->
+                managerService.deleteManager(authUser.getId(), 1L, 1L)
+        );
+
+        //then
+        assertEquals("Manager not found", exception.getMessage());
+    }
 }
