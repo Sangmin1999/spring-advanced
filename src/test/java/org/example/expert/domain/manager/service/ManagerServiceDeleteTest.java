@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -109,4 +110,31 @@ public class ManagerServiceDeleteTest {
         //then
         assertEquals("Manager not found", exception.getMessage());
     }
+
+    @Test
+    void 매니저_삭제_중_매니저와_일정의_매니저가_불일치() {
+        // given
+        AuthUser authUser = new AuthUser(1L, "test@example.com", UserRole.USER);
+        User user = User.fromAuthUser(authUser);
+
+        Todo todo = new Todo("Title", "Contents", "Sunny", user);
+        ReflectionTestUtils.setField(todo, "id", 1L);
+
+        Todo differentTodo = new Todo();
+        ReflectionTestUtils.setField(differentTodo, "id", 2L);
+
+        Manager manager = new Manager(user, differentTodo);
+        ReflectionTestUtils.setField(manager, "id", 1L);
+
+        given(userRepository.findById(anyLong())).willReturn(Optional.of(user));
+        given(todoRepository.findById(anyLong())).willReturn(Optional.of(todo));
+        given(managerRepository.findById(anyLong())).willReturn(Optional.of(manager));
+
+        // when
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, ()->
+                managerService.deleteManager(authUser.getId(), differentTodo.getId(), manager.getId()));
+        // then
+        assertEquals("해당 일정에 등록된 담당자가 아닙니다.", exception.getMessage());
+    }
+
 }
