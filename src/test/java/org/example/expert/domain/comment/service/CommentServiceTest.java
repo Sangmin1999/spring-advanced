@@ -8,6 +8,7 @@ import org.example.expert.domain.comment.repository.CommentRepository;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.common.exception.ServerException;
+import org.example.expert.domain.manager.entity.Manager;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,13 +43,23 @@ class CommentServiceTest {
     private CommentService commentService;
 
     @Test
-    public void comment_등록_중_할일을_찾지_못해_에러가_발생한다() {
+    public void comment_등록_중_할일의_담당자가_아니기_때문에_에러가_발생한다() {
         // given
+        long userId =1;
         long todoId = 1;
         CommentSaveRequest request = new CommentSaveRequest("contents");
         AuthUser authUser = new AuthUser(1L, "email", UserRole.USER);
+        User user = User.fromAuthUser(authUser);
+        Todo todo = new Todo("title", "title", "contents", user);
+        ReflectionTestUtils.setField(todo,"id",todoId);
 
-        given(todoRepository.findById(anyLong())).willReturn(Optional.empty());
+        long anotherUserId = 2;
+        AuthUser anotherAuthUser = new AuthUser(anotherUserId, "email", UserRole.USER);
+        User anotherUser = User.fromAuthUser(anotherAuthUser);
+        Manager manager = new Manager(anotherUser, todo);
+        ReflectionTestUtils.setField(todo, "managers", List.of(manager));
+
+        given(todoRepository.findById(anyLong())).willReturn(Optional.of(todo));
 
         // when
         InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
@@ -55,7 +67,7 @@ class CommentServiceTest {
         });
 
         // then
-        assertEquals("Todo not found", exception.getMessage());
+        assertEquals("Manager not found", exception.getMessage());
     }
 
     @Test
