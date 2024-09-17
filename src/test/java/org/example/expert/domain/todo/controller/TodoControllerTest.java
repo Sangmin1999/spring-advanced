@@ -2,6 +2,7 @@ package org.example.expert.domain.todo.controller;
 
 import org.example.expert.config.JwtUtil;
 import org.example.expert.domain.common.dto.AuthUser;
+import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.service.TodoService;
 import org.example.expert.domain.user.dto.response.UserResponse;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -57,5 +59,22 @@ public class TodoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(todoId))
                 .andExpect(jsonPath("$.title").value(title));
+    }
+
+    @Test
+    void 일정_단건_조회_시_일정이_존재하지_않는_예외() throws Exception {
+        // given
+        long todoId = 1L;
+
+        // when
+        when(todoService.getTodo(todoId))
+                .thenThrow(new InvalidRequestException("Todo not found"));
+
+        // then
+        mockMvc.perform(get("/todos/{todoId}", todoId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpStatus.BAD_REQUEST.name()))
+                .andExpect(jsonPath("$.code").value(HttpStatus.BAD_REQUEST.value()))
+                .andExpect(jsonPath("$.message").value("Todo not found"));
     }
 }
